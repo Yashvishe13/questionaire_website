@@ -1,5 +1,6 @@
 node_modules/
 Musics/
+music/
 *.png
 .env
 .env*.local
