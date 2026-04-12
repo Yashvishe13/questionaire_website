@@ -1,0 +1,7 @@
+{
+  "name": "questionnaire-website",
+  "private": true,
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.4"
+  }
+}

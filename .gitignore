@@ -1,0 +1,6 @@
+node_modules/
+Musics/
+*.png
+.env
+.env*.local
+.vercel

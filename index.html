@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Music Editing Questionnaire</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="intro-panel" id="start-screen">
+        <div class="study-copy">
+          <p class="thank-you-note">Thank you for taking this survey.</p>
+          <h1>Evaluate which edit preserves the original music better.</h1>
+          <p>
+            Your responses will help us compare music editing methods.
+          </p>
+          <p>
+            You will complete 4 sections with 5 questions per section. Each
+            question includes an original clip, an editing instruction, and two
+            edited versions.
+          </p>
+        </div>
+
+        <form class="start-form" id="start-form">
+          <fieldset class="demographic-fieldset">
+            <legend>Demographic survey</legend>
+
+            <label for="participant-id">Participant ID</label>
+            <input
+              id="participant-id"
+              name="participant-id"
+              autocomplete="off"
+              readonly
+            />
+
+            <label for="birth-month">Birth month</label>
+            <select id="birth-month" name="birth-month" required>
+              <option value="">Select month</option>
+              <option value="01">January</option>
+              <option value="02">February</option>
+              <option value="03">March</option>
+              <option value="04">April</option>
+              <option value="05">May</option>
+              <option value="06">June</option>
+              <option value="07">July</option>
+              <option value="08">August</option>
+              <option value="09">September</option>
+              <option value="10">October</option>
+              <option value="11">November</option>
+              <option value="12">December</option>
+            </select>
+
+            <label for="music-background">Musical background</label>
+            <select id="music-background" name="music-background" required>
+              <option value="">Select one</option>
+              <option value="1">
+                1 - I do not have musical training and rarely engage with music.
+              </option>
+              <option value="2">
+                2 - I listen to music and know some styles, musicians, and
+                genres, but I have not studied music.
+              </option>
+              <option value="3">
+                3 - I have basic knowledge of playing an instrument or music
+                theory, but no formal training.
+              </option>
+              <option value="4">
+                4 - I have self-taught music theory or an instrument and am at
+                an amateur level.
+              </option>
+              <option value="5">
+                5 - I have received professional training in a systematic
+                manner.
+              </option>
+            </select>
+          </fieldset>
+          <p class="validation-message start-validation" id="start-validation-message" role="status"></p>
+          <button type="submit">Start survey</button>
+        </form>
+
+        <div class="resume-panel is-hidden" id="resume-panel" aria-live="polite">
+          <p class="eyebrow">In progress</p>
+          <h2>Continue your survey?</h2>
+          <p class="resume-summary" id="resume-summary"></p>
+          <p class="resume-meta" id="resume-meta"></p>
+          <div class="resume-actions">
+            <button type="button" id="resume-continue-button">Continue survey</button>
+            <button type="button" class="secondary-button" id="resume-restart-button">
+              Start over
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section class="instructions-panel is-hidden" id="instructions-screen">
+        <p class="eyebrow">Instructions</p>
+        <h2>Before you begin</h2>
+        <h3>Important guidelines</h3>
+        <ul class="instruction-list">
+          <li>Listen to the original clip, then version A and version B.</li>
+          <li>Use the editing instruction as context only.</li>
+          <li>Focus only on the specified musical aspect.</li>
+          <li>Ignore whether the intended edit itself is correct.</li>
+          <li>Choose the version with fewer unintended changes.</li>
+          <li>
+            Do not judge by personal preference, audio quality, loudness, or
+            which version sounds more interesting.
+          </li>
+          <li>You may listen to each clip multiple times.</li>
+        </ul>
+        <button type="button" id="begin-questions-button">Begin questions</button>
+      </section>
+
+      <section class="questionnaire-panel is-hidden" id="questionnaire-screen">
+        <header class="trial-header">
+          <div>
+            <p class="eyebrow" id="section-label">Section</p>
+            <h2 id="section-heading">Section title</h2>
+          </div>
+          <div class="progress-copy" id="progress-label">Question 1 of 20</div>
+        </header>
+
+        <div class="progress-track" aria-hidden="true">
+          <div class="progress-bar" id="progress-bar"></div>
+        </div>
+
+        <section class="question-copy" aria-label="Question">
+          <p class="eyebrow" id="question-label">Question 1 of 5</p>
+          <p class="instruction-row">
+            <span>Editing instruction:</span>
+            <strong id="editing-instruction"></strong>
+          </p>
+          <p class="prompt-text" id="prompt-text">
+            Which version better preserves the specified musical aspect?
+          </p>
+        </section>
+
+        <form id="response-form" class="response-form">
+          <fieldset class="sample-stack" aria-label="Audio samples">
+            <legend>Listen to each audio clip as many times as needed</legend>
+
+            <div class="original-sample">
+              <span class="sample-name">Original audio</span>
+              <audio id="audio-original" controls preload="metadata"></audio>
+            </div>
+
+            <div class="candidate-grid">
+              <div class="sample-option">
+                <span class="sample-name">Edited version A</span>
+                <audio id="audio-a" controls preload="metadata"></audio>
+                <label class="choice-row" for="answer-a">
+                  <input type="radio" name="choice" value="A" id="answer-a" />
+                  <span>A is better</span>
+                </label>
+              </div>
+
+              <div class="sample-option">
+                <span class="sample-name">Edited version B</span>
+                <audio id="audio-b" controls preload="metadata"></audio>
+                <label class="choice-row" for="answer-b">
+                  <input type="radio" name="choice" value="B" id="answer-b" />
+                  <span>B is better</span>
+                </label>
+              </div>
+            </div>
+
+            <label class="same-option" for="answer-same">
+              <input type="radio" name="choice" value="same" id="answer-same" />
+              <span>About the same</span>
+            </label>
+          </fieldset>
+
+          <p class="validation-message" id="validation-message" role="status"></p>
+
+          <div class="button-row">
+            <button type="button" class="secondary-button" id="back-button">
+              Back
+            </button>
+            <button type="submit" id="next-button">Next</button>
+          </div>
+        </form>
+      </section>
+
+      <div
+        class="section-modal is-hidden"
+        id="section-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="section-modal-title"
+        tabindex="0"
+      >
+        <div class="section-modal-panel">
+          <p class="eyebrow" id="section-modal-label">Section</p>
+          <h2 id="section-modal-title">Section title</h2>
+          <h3>Definition</h3>
+          <p id="section-modal-definition"></p>
+
+          <div class="section-modal-grid">
+            <div>
+              <h3>Focus on</h3>
+              <ul id="section-modal-focus"></ul>
+            </div>
+            <div>
+              <h3>Ignore</h3>
+              <ul id="section-modal-ignore"></ul>
+            </div>
+          </div>
+
+          <button type="button" id="start-section-button">Start section</button>
+        </div>
+      </div>
+
+      <section class="complete-panel is-hidden" id="complete-screen">
+        <p class="eyebrow">Complete</p>
+        <h2>Thank you for taking this survey.</h2>
+        <p id="save-message"></p>
+        <form class="contact-form" id="contact-form">
+          <label for="contact-info">Email address or Alipay account</label>
+          <p>
+            This is entirely voluntary. As a token of appreciation, we will
+            provide a $10 Amazon gift card to participants who choose to share
+            their contact information.
+          </p>
+          <input
+            id="contact-info"
+            name="contact-info"
+            autocomplete="off"
+            placeholder="Optional"
+          />
+          <div class="contact-feedback" id="contact-feedback" role="status">
+            <span class="success-mark" aria-hidden="true">✓</span>
+            <span id="contact-status"></span>
+          </div>
+          <button type="submit" id="contact-submit-button">
+            Save contact information
+          </button>
+        </form>
+      </section>
+    </main>
+
+    <script>
+      // Vercel: same origin so POST /responses is rewritten to /api/responses (vercel.json).
+      // file:// opens keep this empty so submissions stay in the browser only.
+      window.QUESTIONNAIRE_API_URL =
+        window.location.protocol === "file:" ? "" : window.location.origin;
+    </script>
+    <script src="./app.js"></script>
+  </body>
+</html>
