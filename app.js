@@ -19,8 +19,8 @@ function musicUrl(...segments) {
 
 // In-browser session: progress, answers, trials (localStorage). Server (Supabase) only
 // receives data when the participant finishes or saves optional contact info, unless you add sync.
-const STORAGE_KEY = "musicQuestionnaireSession.v9";
-const COMPLETED_KEY = "musicQuestionnaireCompleted.v9";
+const STORAGE_KEY = "musicQuestionnaireSession.v10";
+const COMPLETED_KEY = "musicQuestionnaireCompleted.v10";
 const PENDING_PARTICIPANT_KEY = "musicQuestionnairePendingParticipantId.v1";
 const START_DRAFT_KEY = "musicQuestionnaireStartDraft.v1";
 const API_URL = (window.QUESTIONNAIRE_API_URL || "").replace(/\/$/, "");
