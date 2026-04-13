@@ -3,5 +3,6 @@ Musics/
 music/
 *.png
 .env
+.env.example
 .env*.local
 .vercel
