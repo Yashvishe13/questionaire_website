@@ -16,7 +16,7 @@
             Your responses will help us compare music editing methods.
           </p>
           <p>
-            You will complete 4 sections with 5 questions per section. Each
+            You will complete 4 sections of questions. Each
             question includes an original clip, an editing instruction, and two
             edited versions.
           </p>
@@ -98,7 +98,10 @@
         <h2>Before you begin</h2>
         <h3>Important guidelines</h3>
         <ul class="instruction-list">
-          <li>Listen to the original clip, then version A and version B.</li>
+          <li>
+            Listen to the original clip, then edited option A and edited option B (order
+            is fixed for each question).
+          </li>
           <li>Use the editing instruction as context only.</li>
           <li>Focus only on the specified musical aspect.</li>
           <li>Ignore whether the intended edit itself is correct.</li>
@@ -142,13 +145,23 @@
 
             <div class="original-sample">
               <span class="sample-name">Original audio</span>
-              <audio id="audio-original" controls preload="metadata"></audio>
+              <audio
+                id="audio-original"
+                controls
+                preload="metadata"
+                type="audio/wav"
+              ></audio>
             </div>
 
             <div class="candidate-grid">
               <div class="sample-option">
                 <span class="sample-name">Edited version A</span>
-                <audio id="audio-a" controls preload="metadata"></audio>
+                <audio
+                  id="audio-a"
+                  controls
+                  preload="metadata"
+                  type="audio/wav"
+                ></audio>
                 <label class="choice-row" for="answer-a">
                   <input type="radio" name="choice" value="A" id="answer-a" />
                   <span>A is better</span>
@@ -157,7 +170,12 @@
 
               <div class="sample-option">
                 <span class="sample-name">Edited version B</span>
-                <audio id="audio-b" controls preload="metadata"></audio>
+                <audio
+                  id="audio-b"
+                  controls
+                  preload="metadata"
+                  type="audio/wav"
+                ></audio>
                 <label class="choice-row" for="answer-b">
                   <input type="radio" name="choice" value="B" id="answer-b" />
                   <span>B is better</span>
@@ -244,7 +262,9 @@
       // file:// opens keep this empty so submissions stay in the browser only.
       window.QUESTIONNAIRE_API_URL =
         window.location.protocol === "file:" ? "" : window.location.origin;
+      // Optional: set where ``music/`` lives (default ``./music``). Must end before app.js.
+      // window.MUSIC_BASE = "./music";
     </script>
-    <script src="./app.js"></script>
+    <script src="./app.js?v=15"></script>
   </body>
 </html>

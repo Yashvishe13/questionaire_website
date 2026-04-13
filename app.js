@@ -1,9 +1,26 @@
 "use strict";
 
+/**
+ * Root for all clips (WAV). Set before this script loads if needed, e.g.
+ * ``window.MUSIC_BASE = "/my-site/music"`` (no trailing slash).
+ */
+const MUSIC_BASE = (() => {
+  const raw =
+    typeof window !== "undefined" && window.MUSIC_BASE != null
+      ? String(window.MUSIC_BASE)
+      : "./music";
+  const trimmed = raw.replace(/\/+$/, "");
+  return trimmed === "" ? "." : trimmed;
+})();
+
+function musicUrl(...segments) {
+  return `${MUSIC_BASE}/${segments.join("/")}`;
+}
+
 // In-browser session: progress, answers, trials (localStorage). Server (Supabase) only
 // receives data when the participant finishes or saves optional contact info, unless you add sync.
-const STORAGE_KEY = "musicQuestionnaireSession.v7";
-const COMPLETED_KEY = "musicQuestionnaireCompleted.v7";
+const STORAGE_KEY = "musicQuestionnaireSession.v9";
+const COMPLETED_KEY = "musicQuestionnaireCompleted.v9";
 const PENDING_PARTICIPANT_KEY = "musicQuestionnairePendingParticipantId.v1";
 const START_DRAFT_KEY = "musicQuestionnaireStartDraft.v1";
 const API_URL = (window.QUESTIONNAIRE_API_URL || "").replace(/\/$/, "");
@@ -76,18 +93,53 @@ const EDITING_INSTRUCTIONS = [
     id: "vocal_only_pitch_shift",
     text: "Shift only the vocal pitch up by 5 semitones.",
   },
-  {
-    id: "instrumentation_change",
-    text: "Change the instrumentation of the music.",
-  },
 ];
 
-const MUSIC_BASE_IDS = Array.from({ length: 11 }, (_, index) => index + 1);
-const QUESTIONS_PER_SECTION = 5;
-const EDIT_ENGINES = [
-  { id: "librosa", label: "Librosa", directory: "Librosa" },
-  { id: "midi", label: "MIDI", directory: "MIDI" },
+/** Sample indices 0–97 → ``lmd_100_samples_wav/sample_{n}.wav`` under ``MUSIC_BASE`` */
+const TOTAL_SAMPLES = 98;
+
+/**
+ * 5 splits of 98 samples (20+20+20+20+18), assigned by birth month.
+ * Each split has 4 sections; questions per section are [5,5,5,5] except
+ * the last split which is [5,5,5,3].
+ */
+const SPLITS = [
+  { start: 0,  count: 20, questionsPerSection: [5, 5, 5, 5] },
+  { start: 20, count: 20, questionsPerSection: [5, 5, 5, 5] },
+  { start: 40, count: 20, questionsPerSection: [5, 5, 5, 5] },
+  { start: 60, count: 20, questionsPerSection: [5, 5, 5, 5] },
+  { start: 80, count: 18, questionsPerSection: [5, 5, 5, 3] },
 ];
+
+/** Map birth month (01–12) to split index (0–4). */
+function getSplitIndex(birthMonth) {
+  const m = parseInt(birthMonth, 10);
+  return Math.floor((m - 1) * 5 / 12);
+}
+
+/**
+ * Per editing instruction, which folders under ``MUSIC_BASE`` hold the two renders.
+ * Left column is always blind ``A`` (Librosa in data); right is ``B`` (MIDI in data).
+ * UI never labels engines; ``preference`` in saved responses is ``librosa`` | ``midi`` | ``same``.
+ */
+const INSTRUCTION_AUDIO_MAP = {
+  global_pitch_shift: {
+    librosaDir: "librosa_pitch_shift",
+    midiDir: "midi_pitch_shift",
+  },
+  global_time_stretch: {
+    librosaDir: "librosa_time_stretch",
+    midiDir: "midi_time_stretch",
+  },
+  segment_shuffle: {
+    librosaDir: "librosa_segment_shuffle",
+    midiDir: "midi_segment_shuffle",
+  },
+  vocal_only_pitch_shift: {
+    librosaDir: "librosa_vocal_pitch_shift",
+    midiDir: "midi_vocal_shift",
+  },
+};
 
 const elements = {
   startScreen: document.querySelector("#start-screen"),
@@ -131,7 +183,6 @@ const elements = {
   resumeSummary: document.querySelector("#resume-summary"),
   resumeMeta: document.querySelector("#resume-meta"),
   resumeContinueButton: document.querySelector("#resume-continue-button"),
-  resumeRestartButton: document.querySelector("#resume-restart-button"),
 };
 
 let state = loadSession();
@@ -157,47 +208,43 @@ function createSession(participantId, birthMonth, musicBackground) {
     instructionsSeen: false,
     seenSectionIds: [],
     currentIndex: 0,
-    trials: buildTrials(sampleSeed),
+    splitIndex: getSplitIndex(birthMonth),
+    trials: buildTrials(sampleSeed, birthMonth),
     responses: {},
   };
 }
 
-function buildTrials(seedSource) {
+function buildTrials(seedSource, birthMonth) {
+  const splitIndex = getSplitIndex(birthMonth);
+  const split = SPLITS[splitIndex];
+  const splitSampleIds = Array.from(
+    { length: split.count },
+    (_, i) => split.start + i,
+  );
+  const totalQuestions = split.questionsPerSection.reduce((a, b) => a + b, 0);
+
   const random = createSeededRandom(seedSource);
-  const baseIds = buildBaseIdSequence(
-    SECTIONS.length * QUESTIONS_PER_SECTION,
-    random,
-  );
-  const instructionIds = buildInstructionIdSequence(
-    SECTIONS.length * QUESTIONS_PER_SECTION,
-    random,
-  );
+  const baseIds = buildBaseIdSequence(totalQuestions, random, splitSampleIds);
+  const instructionIds = buildInstructionIdSequence(totalQuestions, random);
   const trials = [];
 
   SECTIONS.forEach((section, sectionIndex) => {
-    for (
-      let questionNumber = 1;
-      questionNumber <= QUESTIONS_PER_SECTION;
-      questionNumber += 1
-    ) {
+    const qCount = split.questionsPerSection[sectionIndex];
+    for (let questionNumber = 1; questionNumber <= qCount; questionNumber += 1) {
       const baseId = baseIds.shift();
       const instructionId = instructionIds.shift();
       const instruction = EDITING_INSTRUCTIONS.find(
         (item) => item.id === instructionId,
       );
-      const candidates = shuffle(
-        EDIT_ENGINES.map((engine) => toEditedSample(engine, baseId)),
-        random,
-      ).map((sample, index) => ({
-        ...sample,
-        side: index === 0 ? "A" : "B",
-      }));
+      const dirs = INSTRUCTION_AUDIO_MAP[instructionId];
+      const candidates = buildCandidatePair(baseId, instruction, dirs);
 
       trials.push({
         id: `${section.id}-q${questionNumber}`,
         section,
         sectionIndex: sectionIndex + 1,
         questionNumber,
+        questionsInSection: qCount,
         instruction,
         baseId,
         original: toOriginalSample(baseId),
@@ -209,11 +256,11 @@ function buildTrials(seedSource) {
   return trials;
 }
 
-function buildBaseIdSequence(requiredCount, random) {
+function buildBaseIdSequence(requiredCount, random, samplePool) {
   const baseIds = [];
 
   while (baseIds.length < requiredCount) {
-    baseIds.push(...shuffle([...MUSIC_BASE_IDS], random));
+    baseIds.push(...shuffle([...samplePool], random));
   }
 
   return baseIds.slice(0, requiredCount);
@@ -221,7 +268,9 @@ function buildBaseIdSequence(requiredCount, random) {
 
 function buildInstructionIdSequence(requiredCount, random) {
   const instructionIds = [];
-  const sourceIds = EDITING_INSTRUCTIONS.map((instruction) => instruction.id);
+  const sourceIds = EDITING_INSTRUCTIONS.filter(
+    (instruction) => INSTRUCTION_AUDIO_MAP[instruction.id],
+  ).map((instruction) => instruction.id);
 
   while (instructionIds.length < requiredCount) {
     instructionIds.push(...shuffle([...sourceIds], random));
@@ -231,23 +280,42 @@ function buildInstructionIdSequence(requiredCount, random) {
 }
 
 function toOriginalSample(baseId) {
+  const stem = `sample_${baseId}`;
   return {
     role: "original",
-    fileId: `${baseId}`,
+    fileId: stem,
     baseId,
-    src: `./Musics/Original/${baseId}.wav`,
+    src: musicUrl("lmd_100_samples_wav", `${stem}.wav`),
   };
 }
 
-function toEditedSample(engine, baseId) {
-  return {
-    role: "candidate",
-    engine: engine.id,
-    engineLabel: engine.label,
-    fileId: `${baseId}-${engine.id}`,
-    baseId,
-    src: `./Musics/${engine.directory}/${baseId}.wav`,
-  };
+/** Left = Option A (Librosa); right = Option B (MIDI). ``blindSide`` is all the UI reveals. */
+function buildCandidatePair(baseId, instruction, dirs) {
+  const stem = `sample_${baseId}`;
+  return [
+    {
+      role: "candidate",
+      engine: "librosa",
+      engineLabel: "Librosa",
+      blindSide: "A",
+      position: "left",
+      fileId: `${stem}-librosa-${instruction.id}`,
+      baseId,
+      instructionId: instruction.id,
+      src: musicUrl(dirs.librosaDir, `${stem}.wav`),
+    },
+    {
+      role: "candidate",
+      engine: "midi",
+      engineLabel: "MIDI",
+      blindSide: "B",
+      position: "right",
+      fileId: `${stem}-midi-${instruction.id}`,
+      baseId,
+      instructionId: instruction.id,
+      src: musicUrl(dirs.midiDir, `${stem}.wav`),
+    },
+  ];
 }
 
 function render() {
@@ -273,9 +341,13 @@ function render() {
 }
 
 function setStartColumnMode(mode) {
-  const isResume = mode === "resume";
-  elements.startForm.classList.toggle("is-hidden", isResume);
-  elements.resumePanel.classList.toggle("is-hidden", !isResume);
+  if (mode === "resume") {
+    elements.startForm.classList.add("is-hidden");
+    elements.resumePanel.classList.remove("is-hidden");
+  } else {
+    elements.startForm.classList.remove("is-hidden");
+    elements.resumePanel.classList.add("is-hidden");
+  }
 }
 
 function populateResumePanel() {
@@ -313,9 +385,12 @@ function continueSurvey() {
 function discardSurveyProgress() {
   clearProgressSyncTimer();
   localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(COMPLETED_KEY);
   localStorage.removeItem(START_DRAFT_KEY);
   localStorage.removeItem(PENDING_PARTICIPANT_KEY);
   state = null;
+  elements.sectionModal?.classList.add("is-hidden");
+  clearChoice();
   render();
 }
 
@@ -453,12 +528,15 @@ function renderTrial() {
   elements.sectionHeading.textContent = trial.section.label;
   elements.progressLabel.textContent = `Question ${state.currentIndex + 1} of ${total}`;
   elements.progressBar.style.width = `${progress}%`;
-  elements.questionLabel.textContent = `Question ${trial.questionNumber} of ${QUESTIONS_PER_SECTION}`;
+  elements.questionLabel.textContent = `Question ${trial.questionNumber} of ${trial.questionsInSection}`;
   elements.editingInstruction.textContent = trial.instruction.text;
   elements.promptText.textContent = trial.section.prompt;
   elements.audioOriginal.src = trial.original.src;
-  elements.audioA.src = trial.candidates.find((sample) => sample.side === "A").src;
-  elements.audioB.src = trial.candidates.find((sample) => sample.side === "B").src;
+  elements.audioA.src = trial.candidates.find((s) => s.engine === "librosa").src;
+  elements.audioB.src = trial.candidates.find((s) => s.engine === "midi").src;
+  elements.audioOriginal.load();
+  elements.audioA.load();
+  elements.audioB.load();
   elements.backButton.disabled = state.currentIndex === 0;
   elements.nextButton.textContent =
     state.currentIndex === total - 1 ? "Finish" : "Next";
@@ -467,8 +545,9 @@ function renderTrial() {
   clearChoice();
 
   if (existingResponse) {
+    const radioValue = blindChoiceForRestore(existingResponse, trial);
     const checked = document.querySelector(
-      `input[name="choice"][value="${existingResponse.selectedSide}"]`,
+      `input[name="choice"][value="${radioValue}"]`,
     );
 
     if (checked) {
@@ -526,6 +605,26 @@ function showScreen(screen) {
   elements.completeScreen.classList.toggle("is-hidden", screen !== "complete");
 }
 
+/** Map saved response + trial to radio value ``A`` | ``B`` | ``same``. */
+function blindChoiceForRestore(existingResponse, trial) {
+  const dc = existingResponse.displayChoice;
+  if (dc === "A" || dc === "B" || dc === "same") {
+    return dc;
+  }
+  const pref = existingResponse.preference || existingResponse.selectedSide;
+  if (pref === "same") {
+    return "same";
+  }
+  if (pref === "librosa" || pref === "midi") {
+    const c = trial.candidates.find((x) => x.engine === pref);
+    return c ? c.blindSide : "";
+  }
+  if (pref === "A" || pref === "B") {
+    return pref;
+  }
+  return "";
+}
+
 function saveCurrentResponse() {
   const formData = new FormData(elements.responseForm);
   const choice = formData.get("choice");
@@ -536,10 +635,15 @@ function saveCurrentResponse() {
   }
 
   const trial = state.trials[state.currentIndex];
-  const selectedSample =
-    choice === "same"
-      ? null
-      : trial.candidates.find((sample) => sample.side === choice);
+  const displayChoice = choice;
+  let preference;
+  let selectedSample = null;
+  if (choice === "same") {
+    preference = "same";
+  } else {
+    selectedSample = trial.candidates.find((c) => c.blindSide === choice);
+    preference = selectedSample ? selectedSample.engine : null;
+  }
 
   state.responses[trial.id] = {
     trialId: trial.id,
@@ -549,7 +653,10 @@ function saveCurrentResponse() {
     instructionId: trial.instruction.id,
     editingInstruction: trial.instruction.text,
     baseId: trial.baseId,
-    selectedSide: choice,
+    /** What the participant saw: ``A`` | ``B`` | ``same``. */
+    displayChoice,
+    /** Backend / analysis: ``librosa`` | ``midi`` | ``same`` (never shown in UI). */
+    preference,
     chosenEngine: selectedSample ? selectedSample.engine : null,
     chosenEngineLabel: selectedSample ? selectedSample.engineLabel : null,
     selectedSample,
@@ -596,7 +703,8 @@ function buildSubmissionPayload() {
     submittedAt: state.submittedAt,
     responseCount: Object.keys(state.responses).length,
     sectionCount: SECTIONS.length,
-    questionsPerSection: QUESTIONS_PER_SECTION,
+    splitIndex: state.splitIndex,
+    questionsPerSection: SPLITS[state.splitIndex].questionsPerSection,
     audioSampleCount: state.trials.length * 3,
     trials: state.trials.map((trial, index) => ({
       index: index + 1,
@@ -729,7 +837,7 @@ elements.startForm.addEventListener("submit", (event) => {
   state = createSession(participantId, birthMonth, musicBackground);
   clearStartDraft();
   persistSession();
-  render();
+  showScreen("instructions");
 });
 
 elements.beginQuestionsButton.addEventListener("click", () => {
@@ -739,7 +847,8 @@ elements.beginQuestionsButton.addEventListener("click", () => {
 
   state.instructionsSeen = true;
   persistSession();
-  render();
+  showScreen("questionnaire");
+  renderTrial();
 });
 
 elements.startSectionButton.addEventListener("click", () => {
@@ -862,16 +971,9 @@ elements.contactForm.addEventListener("submit", async (event) => {
 });
 
 function showContactSaved() {
-  elements.contactSubmitButton.disabled = false;
-  elements.contactSubmitButton.textContent = "Saved";
-  elements.contactForm.classList.remove("is-saved");
-  void elements.contactForm.offsetWidth;
-  elements.contactForm.classList.add("is-saved");
-  updateContactFeedback(true);
-
-  window.setTimeout(() => {
-    elements.contactSubmitButton.textContent = "Save contact information";
-  }, 1400);
+  elements.contactForm.classList.add("is-hidden");
+  elements.saveMessage.textContent =
+    "Thank you for sharing your contact information. We will reach out soon.";
 }
 
 function updateContactFeedback(isVisible) {
@@ -896,15 +998,20 @@ elements.resumeContinueButton.addEventListener("click", () => {
   continueSurvey();
 });
 
-elements.resumeRestartButton.addEventListener("click", () => {
-  if (
-    window.confirm(
-      "Discard this survey progress on this device? You will get a new participant ID.",
-    )
-  ) {
-    discardSurveyProgress();
+function bindResumeRestartButton() {
+  const restart = document.getElementById("resume-restart-button");
+  if (!restart) {
+    return;
   }
-});
+  restart.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    discardSurveyProgress();
+  });
+}
+
+bindResumeRestartButton();
+
 
 window.addEventListener("beforeunload", flushInProgressAnswer);
 window.addEventListener("pagehide", flushInProgressAnswer);

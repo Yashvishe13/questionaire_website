@@ -28,21 +28,13 @@ At the end, participants may optionally leave an email address or Alipay account
   - About the same
 - 3 audio samples per question:
   - Original audio
-  - Edited version A
-  - Edited version B
+  - Edited version A (left; Librosa in data, not labeled in the UI)
+  - Edited version B (right; MIDI in data, not labeled in the UI)
 - 20 questions, 20 original references, and 40 hidden edited candidates per participant
 
-The UI does not reveal whether edited sample A or B is Librosa or MIDI. The submission payload does store `chosenEngine` for the selected candidate so the backend can save whether the participant chose Librosa or MIDI.
+The UI only shows A/B/same. The submission payload stores `displayChoice` (`A` | `B` | `same`) and `preference` / `chosenEngine` (`librosa` | `midi` | `same`) so the backend knows which engine was chosen without exposing it on screen.
 
-The current audio folder layout is:
-
-```text
-Musics/Original
-Musics/Librosa
-Musics/MIDI
-```
-
-The current `Original`, `Librosa`, and `MIDI` folders were created from the existing flat `Musics/*.wav` files as local placeholders. Replace those files with the real original, Librosa, and MIDI outputs when available.
+Audio is read from the `music/` folder (paths wired in `app.js`). Original clips: `music/lmd_100_samples_wav/sample_{0..99}.wav`. Edited clips use parallel Librosa and MIDI subfolders per editing instruction (for example `music/librosa_pitch_shift/` and `music/midi_pitch_shift/`). MIDI edits must be rendered to WAV (same `sample_*.wav` names) for use in the browser, for example with `scripts/midi_samples_to_wav.py` on each `music/midi_*` directory.
 
 ## AWS-Ready Hook
 

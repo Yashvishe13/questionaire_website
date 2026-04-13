@@ -3,12 +3,14 @@
 
 Re-running after a crash: by default, existing output ``.wav`` files are skipped so the
 run continues from missing files only. Use ``--overwrite`` to replace every WAV.
-Writes go to a ``.wav.tmp`` file first, then replace the final ``.wav`` atomically.
+Writes go to a ``.wav.tmp`` file first, then replace the final ``.wav`` atomically
+(``soundfile`` is given ``format="WAV"`` because ``.wav.tmp`` is not a recognized extension).
 """
 
 from __future__ import annotations
 
 import argparse
+import inspect
 import sys
 from pathlib import Path
 
@@ -45,16 +47,30 @@ def midi_to_wav(mid_path: Path, wav_path: Path, sample_rate: int) -> None:
             "Often this means the file is HTML/text from a failed download — re-fetch from LMD."
         )
     pm = pretty_midi.PrettyMIDI(str(mid_path))
-    audio = pm.synthesize(fs=sample_rate, normalize=True)
+    # ``normalize=`` exists only in newer pretty_midi; older versions raise TypeError.
+    synth_params = inspect.signature(pretty_midi.PrettyMIDI.synthesize).parameters
+    synth_kw: dict[str, object] = {"fs": sample_rate}
+    if "normalize" in synth_params:
+        synth_kw["normalize"] = True
+    audio = pm.synthesize(**synth_kw)
     if audio.size == 0:
         raise ValueError(f"No audio synthesized (empty MIDI?): {mid_path}")
+    audio = np.asarray(audio, dtype=np.float32)
     peak = float(np.abs(audio).max())
     if peak == 0.0:
         raise ValueError(f"Synthesized silence only: {mid_path}")
-    audio_f32 = np.asarray(audio, dtype=np.float32)
+    if "normalize" not in synth_params:
+        audio = audio / peak
+    audio_f32 = audio
     tmp_path = wav_path.with_name(wav_path.name + ".tmp")
     try:
-        sf.write(str(tmp_path), audio_f32, sample_rate, subtype="PCM_16")
+        sf.write(
+            str(tmp_path),
+            audio_f32,
+            sample_rate,
+            subtype="PCM_16",
+            format="WAV",
+        )
         tmp_path.replace(wav_path)
     except Exception:
         if tmp_path.exists():
