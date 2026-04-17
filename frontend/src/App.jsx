@@ -543,67 +543,71 @@ export default function App() {
       {/* ── Instructions screen ── */}
       {screen === "instructions" && (
         <section className="instructions-panel">
-          <p className="eyebrow">Instructions</p>
-          <h2>Listening Test Instructions</h2>
-          <p>Thank you for participating in this listening study!</p>
+          <div className="instructions-left">
+            <p className="eyebrow">Instructions</p>
+            <h2>Listening Test Instructions</h2>
+            <p>Thank you for participating in this listening study!</p>
 
-          <h3>What You Will Hear</h3>
-          <p>In each question, you will hear <strong>three music clips</strong>:</p>
-          <ul className="instruction-list">
-            <li><strong>One original clip</strong></li>
-            <li><strong>Two edited versions</strong> derived from the same original clip</li>
-          </ul>
-          <p>All clips are short excerpts and may be replayed as many times as you like.</p>
+            <h3>What You Will Hear</h3>
+            <p>In each question, you will hear <strong>three music clips</strong>:</p>
+            <ul className="instruction-list">
+              <li><strong>One original clip</strong></li>
+              <li><strong>Two edited versions</strong> derived from the same original clip</li>
+            </ul>
+            <p>All clips are short excerpts and may be replayed as many times as you like.</p>
 
-          <h3>Your Task</h3>
-          <p>
-            For each question, you will be asked to focus on <strong>one specific musical
-            aspect</strong>, such as:
-          </p>
-          <ul className="instruction-list">
-            <li>Harmony</li>
-            <li>Rhythm &amp; Meter</li>
-            <li>Structural Form</li>
-            <li>Melodic Content &amp; Motifs</li>
-          </ul>
-          <p>
-            <strong>
-              Your task is to compare the two edited clips and decide which one is farther
-              from the original one with respect to that aspect.
-            </strong>
-          </p>
+            <h3>Your Task</h3>
+            <p>
+              For each question, you will be asked to focus on <strong>one specific musical
+              aspect</strong>, such as:
+            </p>
+            <ul className="instruction-list">
+              <li>Harmony</li>
+              <li>Rhythm &amp; Meter</li>
+              <li>Structural Form</li>
+              <li>Melodic Content &amp; Motifs</li>
+            </ul>
+            <p>
+              <strong>
+                Your task is to compare the two edited clips and decide which one is farther
+                from the original one with respect to that aspect.
+              </strong>
+            </p>
+          </div>
 
-          <h3>How to Answer</h3>
-          <p>After listening, select one of the following options:</p>
-          <ul className="instruction-list">
-            <li>Edited Clip A is farther from the original</li>
-            <li>Edited Clip B is farther from the original</li>
-            <li>
-              The difference is negligible (use this option only if you cannot make a
-              decision after careful listening)
-            </li>
-          </ul>
+          <div className="instructions-right">
+            <h3>How to Answer</h3>
+            <p>After listening, select one of the following options:</p>
+            <ul className="instruction-list">
+              <li>Edited Clip A is farther from the original</li>
+              <li>Edited Clip B is farther from the original</li>
+              <li>
+                The difference is negligible (use this option only if you cannot make a
+                decision after careful listening)
+              </li>
+            </ul>
 
-          <h3>Important Notes</h3>
-          <ul className="instruction-list">
-            <li>
-              Please <strong>focus only on the specified musical aspect</strong> for each
-              question. Ignore other differences.
-            </li>
-            <li>
-              You may <strong>listen to each clip multiple times</strong> before making a
-              decision.
-            </li>
-            <li>
-              Use <strong>headphones or a quiet environment</strong> if possible for better
-              listening quality.
-            </li>
-            <li>Some differences may be subtle — please rely on your best judgment.</li>
-          </ul>
+            <h3>Important Notes</h3>
+            <ul className="instruction-list">
+              <li>
+                Please <strong>focus only on the specified musical aspect</strong> for each
+                question. Ignore other differences.
+              </li>
+              <li>
+                You may <strong>listen to each clip multiple times</strong> before making a
+                decision.
+              </li>
+              <li>
+                Use <strong>headphones or a quiet environment</strong> if possible for better
+                listening quality.
+              </li>
+              <li>Some differences may be subtle — please rely on your best judgment.</li>
+            </ul>
 
-          <button type="button" onClick={handleBeginQuestions}>
-            Begin questions
-          </button>
+            <button type="button" onClick={handleBeginQuestions}>
+              Begin questions
+            </button>
+          </div>
         </section>
       )}
 
@@ -735,73 +739,78 @@ export default function App() {
           tabIndex={0}
         >
           <div className="section-modal-panel">
-            <p className="eyebrow">
-              Section {trial.sectionIndex} of {SECTIONS.length}
-            </p>
-            <h2 id="section-modal-title">{trial.section.label}</h2>
-            <h3>Definition</h3>
-            <p>{trial.section.definition}</p>
-            <div className="section-modal-grid">
-              <div>
-                <h3>Focus on</h3>
-                <ul>
-                  {trial.section.focus.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <h3>Ignore</h3>
-                <ul>
-                  {trial.section.ignore.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-            <div className="section-example">
-              <h3>Example</h3>
-              <p>Listen to the example below. The correct answer is revealed afterward.</p>
-              <table className="example-table">
-                <thead>
-                  <tr>
-                    <th>Clip</th>
-                    <th>Edit</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {trial.section.example.clips.map((row) => (
-                    <tr key={row.clip}>
-                      <td>{row.clip}</td>
-                      <td>{row.edit}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              <div className="example-audio-stack">
-                <div className="example-audio-row">
-                  <span className="example-audio-label">Original</span>
-                  <audio controls preload="metadata" src={trial.section.example.audio.original} />
-                </div>
-                <div className="example-audio-row">
-                  <span className="example-audio-label">Clip A</span>
-                  <audio controls preload="metadata" src={trial.section.example.audio.clipA} />
-                </div>
-                <div className="example-audio-row">
-                  <span className="example-audio-label">Clip B</span>
-                  <audio controls preload="metadata" src={trial.section.example.audio.clipB} />
-                </div>
-              </div>
-
-              <p className="example-answer">
-                <strong>Correct answer:</strong> {trial.section.example.correctAnswer}
+            <div className="section-modal-left">
+              <p className="eyebrow">
+                Section {trial.sectionIndex} of {SECTIONS.length}
               </p>
-              <p className="example-explanation">{trial.section.example.explanation}</p>
+              <h2 id="section-modal-title">{trial.section.label}</h2>
+              <h3>Definition</h3>
+              <p>{trial.section.definition}</p>
+              <div className="section-modal-grid">
+                <div>
+                  <h3>Focus on</h3>
+                  <ul>
+                    {trial.section.focus.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <h3>Ignore</h3>
+                  <ul>
+                    {trial.section.ignore.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
             </div>
-            <button type="button" onClick={handleStartSection}>
-              Start section
-            </button>
+
+            <div className="section-modal-right">
+              <div className="section-example">
+                <h3>Example</h3>
+                <p>Listen to the example below. The correct answer is revealed afterward.</p>
+                <table className="example-table">
+                  <thead>
+                    <tr>
+                      <th>Clip</th>
+                      <th>Edit</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {trial.section.example.clips.map((row) => (
+                      <tr key={row.clip}>
+                        <td>{row.clip}</td>
+                        <td>{row.edit}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                <div className="example-audio-stack">
+                  <div className="example-audio-row">
+                    <span className="example-audio-label">Original</span>
+                    <audio controls preload="metadata" src={trial.section.example.audio.original} />
+                  </div>
+                  <div className="example-audio-row">
+                    <span className="example-audio-label">Clip A</span>
+                    <audio controls preload="metadata" src={trial.section.example.audio.clipA} />
+                  </div>
+                  <div className="example-audio-row">
+                    <span className="example-audio-label">Clip B</span>
+                    <audio controls preload="metadata" src={trial.section.example.audio.clipB} />
+                  </div>
+                </div>
+
+                <p className="example-answer">
+                  <strong>Correct answer:</strong> {trial.section.example.correctAnswer}
+                </p>
+                <p className="example-explanation">{trial.section.example.explanation}</p>
+              </div>
+              <button type="button" onClick={handleStartSection}>
+                Start section
+              </button>
+            </div>
           </div>
         </div>
       )}
