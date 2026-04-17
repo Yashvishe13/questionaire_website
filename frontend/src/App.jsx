@@ -755,14 +755,6 @@ export default function App() {
                     ))}
                   </ul>
                 </div>
-                <div>
-                  <h3>Ignore</h3>
-                  <ul>
-                    {trial.section.ignore.map((item) => (
-                      <li key={item}>{item}</li>
-                    ))}
-                  </ul>
-                </div>
               </div>
             </div>
 
