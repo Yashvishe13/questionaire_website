@@ -496,6 +496,83 @@ audio {
   line-height: 1.55;
 }
 
+.section-example {
+  margin-bottom: 24px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f9fcfb;
+}
+
+.section-example h3 {
+  margin: 0 0 8px;
+}
+
+.section-example p {
+  margin: 0 0 12px;
+}
+
+.example-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 14px;
+  font-size: 0.95rem;
+}
+
+.example-table th,
+.example-table td {
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  text-align: left;
+}
+
+.example-table th {
+  background: #edf3f0;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.example-table td {
+  color: var(--muted);
+}
+
+.example-table tr:first-child td {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.example-audio-stack {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.example-audio-row {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  align-items: center;
+  gap: 12px;
+}
+
+.example-audio-label {
+  font-weight: 800;
+  color: var(--ink);
+  font-size: 0.95rem;
+}
+
+.example-audio-row audio {
+  width: 100%;
+  min-width: 0;
+}
+
+.example-answer {
+  color: var(--ink) !important;
+}
+
+.example-explanation {
+  font-style: italic;
+}
+
 .complete-panel p:not(.eyebrow) {
   margin: 16px 0 28px;
 }

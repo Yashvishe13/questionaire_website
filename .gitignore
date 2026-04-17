@@ -6,3 +6,8 @@ music/
 .env.example
 .env*.local
 .vercel
+scripts/
+*.md
+*.zip
+*.txt
+*.out

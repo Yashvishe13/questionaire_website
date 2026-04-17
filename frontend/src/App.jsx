@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import {
   SECTIONS,
-  EDITING_INSTRUCTIONS,
-  INSTRUCTION_AUDIO_MAP,
   SPLITS,
+  QUESTIONS_PER_SECTION,
   STORAGE_KEY,
   COMPLETED_KEY,
   PENDING_PARTICIPANT_KEY,
@@ -14,32 +13,7 @@ import {
 
 function getSplitIndex(birthMonth) {
   const m = parseInt(birthMonth, 10);
-  return Math.floor(((m - 1) * 5) / 12);
-}
-
-function hashString(value) {
-  let hash = 2166136261;
-  for (let i = 0; i < value.length; i++) {
-    hash ^= value.charCodeAt(i);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
-}
-
-function createSeededRandom(seedSource) {
-  let seed = hashString(seedSource);
-  return () => {
-    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
-    return seed / 4294967296;
-  };
-}
-
-function shuffle(items, random) {
-  for (let i = items.length - 1; i > 0; i--) {
-    const j = Math.floor(random() * (i + 1));
-    [items[i], items[j]] = [items[j], items[i]];
-  }
-  return items;
+  return m <= 6 ? 0 : 1;
 }
 
 function createId(prefix) {
@@ -58,88 +32,30 @@ function getPendingParticipantId() {
   return id;
 }
 
-function musicUrl(...segments) {
-  return `/music/${segments.join("/")}`;
-}
-
-function buildTrials(sampleSeed, birthMonth) {
+function buildTrials(birthMonth) {
   const splitIndex = getSplitIndex(birthMonth);
   const split = SPLITS[splitIndex];
-  const splitSampleIds = Array.from({ length: split.count }, (_, i) => split.start + i);
-  const totalQuestions = split.questionsPerSection.reduce((a, b) => a + b, 0);
-
-  const random = createSeededRandom(sampleSeed);
-
-  const baseIds = [];
-  while (baseIds.length < totalQuestions) {
-    baseIds.push(...shuffle([...splitSampleIds], random));
-  }
-  const baseIdSeq = baseIds.slice(0, totalQuestions);
-
-  const sourceIds = EDITING_INSTRUCTIONS.filter(
-    (instr) => INSTRUCTION_AUDIO_MAP[instr.id],
-  ).map((instr) => instr.id);
-  const instructionIds = [];
-  while (instructionIds.length < totalQuestions) {
-    instructionIds.push(...shuffle([...sourceIds], random));
-  }
-  const instrIdSeq = instructionIds.slice(0, totalQuestions);
-
   const trials = [];
+
   SECTIONS.forEach((section, sectionIndex) => {
-    const qCount = split.questionsPerSection[sectionIndex];
-    for (let qNum = 1; qNum <= qCount; qNum++) {
-      const baseId = baseIdSeq.shift();
-      const instructionId = instrIdSeq.shift();
-      const instruction = EDITING_INSTRUCTIONS.find((i) => i.id === instructionId);
-      const dirs = INSTRUCTION_AUDIO_MAP[instructionId];
-      const stem = `sample_${baseId}`;
+    split.questionIndices.forEach((qIdx, i) => {
+      const q = section.questions[qIdx];
       trials.push({
-        id: `${section.id}-q${qNum}`,
+        id: `${section.id}-${q.id}`,
         section,
         sectionIndex: sectionIndex + 1,
-        questionNumber: qNum,
-        questionsInSection: qCount,
-        instruction,
-        baseId,
-        original: {
-          role: "original",
-          fileId: stem,
-          baseId,
-          src: musicUrl("lmd_100_samples_wav", `${stem}.wav`),
-        },
-        candidates: [
-          {
-            role: "candidate",
-            engine: "librosa",
-            engineLabel: "Librosa",
-            blindSide: "A",
-            position: "left",
-            fileId: `${stem}-librosa-${instructionId}`,
-            baseId,
-            instructionId,
-            src: musicUrl(dirs.librosaDir, `${stem}.wav`),
-          },
-          {
-            role: "candidate",
-            engine: "midi",
-            engineLabel: "MIDI",
-            blindSide: "B",
-            position: "right",
-            fileId: `${stem}-midi-${instructionId}`,
-            baseId,
-            instructionId,
-            src: musicUrl(dirs.midiDir, `${stem}.wav`),
-          },
-        ],
+        questionNumber: i + 1,
+        questionsInSection: QUESTIONS_PER_SECTION,
+        questionDef: q,
+        audio: q.audio,
       });
-    }
+    });
   });
+
   return trials;
 }
 
 function createSession(participantId, birthMonth, musicBackground) {
-  const sampleSeed = `${participantId}:${birthMonth}`;
   return {
     participantId,
     birthMonth,
@@ -150,7 +66,6 @@ function createSession(participantId, birthMonth, musicBackground) {
     },
     contactInfo: null,
     contactSubmittedAt: null,
-    sampleSeed,
     sessionId: createId("session"),
     startedAt: new Date().toISOString(),
     submittedAt: null,
@@ -158,7 +73,7 @@ function createSession(participantId, birthMonth, musicBackground) {
     seenSectionIds: [],
     currentIndex: 0,
     splitIndex: getSplitIndex(birthMonth),
-    trials: buildTrials(sampleSeed, birthMonth),
+    trials: buildTrials(birthMonth),
     responses: {},
   };
 }
@@ -185,24 +100,20 @@ function buildPayload(sess) {
     demographics: sess.demographics,
     contactInfo: sess.contactInfo || null,
     contactSubmittedAt: sess.contactSubmittedAt || null,
-    sampleSeed: sess.sampleSeed,
     sessionId: sess.sessionId,
     startedAt: sess.startedAt,
     submittedAt: sess.submittedAt,
     responseCount: Object.keys(sess.responses).length,
     sectionCount: SECTIONS.length,
     splitIndex: sess.splitIndex,
-    questionsPerSection: SPLITS[sess.splitIndex].questionsPerSection,
-    audioSampleCount: sess.trials.length * 3,
     trials: sess.trials.map((trial, i) => ({
       index: i + 1,
       trialId: trial.id,
-      section: trial.section,
+      sectionId: trial.section.id,
+      sectionLabel: trial.section.label,
       questionNumber: trial.questionNumber,
-      instruction: trial.instruction,
-      baseId: trial.baseId,
-      original: trial.original,
-      candidates: trial.candidates,
+      questionId: trial.questionDef.id,
+      audio: trial.audio,
       response: sess.responses[trial.id] || null,
     })),
   };
@@ -224,29 +135,12 @@ function getRestoredChoice(sess) {
   const trial = sess.trials[sess.currentIndex];
   const existing = sess.responses[trial.id];
   if (!existing) return "";
-  const dc = existing.displayChoice;
-  if (dc === "A" || dc === "B" || dc === "same") return dc;
-  const pref = existing.preference || existing.selectedSide;
-  if (pref === "same") return "same";
-  if (pref === "librosa" || pref === "midi") {
-    const c = trial.candidates.find((x) => x.engine === pref);
-    return c ? c.blindSide : "";
-  }
-  if (pref === "A" || pref === "B") return pref;
-  return "";
+  return existing.displayChoice || "";
 }
 
 function applyResponse(sess, choiceVal) {
   if (!choiceVal) return null;
   const trial = sess.trials[sess.currentIndex];
-  let preference;
-  let selectedSample = null;
-  if (choiceVal === "same") {
-    preference = "same";
-  } else {
-    selectedSample = trial.candidates.find((c) => c.blindSide === choiceVal);
-    preference = selectedSample ? selectedSample.engine : null;
-  }
   return {
     ...sess,
     responses: {
@@ -256,16 +150,9 @@ function applyResponse(sess, choiceVal) {
         sectionId: trial.section.id,
         sectionLabel: trial.section.label,
         questionNumber: trial.questionNumber,
-        instructionId: trial.instruction.id,
-        editingInstruction: trial.instruction.text,
-        baseId: trial.baseId,
+        questionId: trial.questionDef.id,
         displayChoice: choiceVal,
-        preference,
-        chosenEngine: selectedSample ? selectedSample.engine : null,
-        chosenEngineLabel: selectedSample ? selectedSample.engineLabel : null,
-        selectedSample,
-        original: trial.original,
-        candidates: trial.candidates,
+        audio: trial.audio,
         answeredAt: new Date().toISOString(),
       },
     },
@@ -291,7 +178,6 @@ export default function App() {
   const syncTimer = useRef(null);
   const pendingId = useRef(getPendingParticipantId());
 
-  // Load persisted session on mount
   useEffect(() => {
     const saved = loadSession();
     if (saved) {
@@ -312,7 +198,6 @@ export default function App() {
     }
   }, []);
 
-  // Flush in-progress answer on page unload
   useEffect(() => {
     const flush = () => {
       if (!session || session.submittedAt || screen !== "questionnaire" || !choice) return;
@@ -334,12 +219,8 @@ export default function App() {
     };
   }, [session, screen, choice]);
 
-  function canSync(sess) {
-    return Boolean(sess && !sess.submittedAt && sess.sessionId && sess.participantId);
-  }
-
   function queueSync(sess, immediate) {
-    if (!canSync(sess)) {
+    if (!sess || sess.submittedAt) {
       if (syncTimer.current) clearTimeout(syncTimer.current);
       return;
     }
@@ -445,7 +326,6 @@ export default function App() {
       return;
     }
 
-    // Last question — finish
     setIsSaving(true);
     updated = { ...updated, submittedAt: new Date().toISOString() };
     persistSession(updated);
@@ -549,12 +429,13 @@ export default function App() {
       {screen === "start" && (
         <section className="intro-panel" id="start-screen">
           <div className="study-copy">
-            <p className="thank-you-note">Thank you for taking this survey.</p>
-            <h1>Evaluate which edit preserves the original music better.</h1>
+            <p className="thank-you-note">Thank you for participating in this survey.</p>
+            <h1>Compare two edited clips and decide which one is farther from the original.</h1>
             <p>Your responses will help us compare music editing methods.</p>
             <p>
-              You will complete 4 sections of questions. Each question includes an original
-              clip, an editing instruction, and two edited versions.
+              You will complete 4 sections with 2 questions each. Each question includes an
+              original clip and two edited versions. Focus on the specified musical aspect for
+              each section.
             </p>
           </div>
 
@@ -663,23 +544,63 @@ export default function App() {
       {screen === "instructions" && (
         <section className="instructions-panel">
           <p className="eyebrow">Instructions</p>
-          <h2>Before you begin</h2>
-          <h3>Important guidelines</h3>
+          <h2>Listening Test Instructions</h2>
+          <p>Thank you for participating in this listening study!</p>
+
+          <h3>What You Will Hear</h3>
+          <p>In each question, you will hear <strong>three music clips</strong>:</p>
+          <ul className="instruction-list">
+            <li><strong>One original clip</strong></li>
+            <li><strong>Two edited versions</strong> derived from the same original clip</li>
+          </ul>
+          <p>All clips are short excerpts and may be replayed as many times as you like.</p>
+
+          <h3>Your Task</h3>
+          <p>
+            For each question, you will be asked to focus on <strong>one specific musical
+            aspect</strong>, such as:
+          </p>
+          <ul className="instruction-list">
+            <li>Harmony</li>
+            <li>Rhythm &amp; Meter</li>
+            <li>Structural Form</li>
+            <li>Melodic Content &amp; Motifs</li>
+          </ul>
+          <p>
+            <strong>
+              Your task is to compare the two edited clips and decide which one is farther
+              from the original one with respect to that aspect.
+            </strong>
+          </p>
+
+          <h3>How to Answer</h3>
+          <p>After listening, select one of the following options:</p>
+          <ul className="instruction-list">
+            <li>Edited Clip A is farther from the original</li>
+            <li>Edited Clip B is farther from the original</li>
+            <li>
+              The difference is negligible (use this option only if you cannot make a
+              decision after careful listening)
+            </li>
+          </ul>
+
+          <h3>Important Notes</h3>
           <ul className="instruction-list">
             <li>
-              Listen to the original clip, then edited option A and edited option B (order is
-              fixed for each question).
+              Please <strong>focus only on the specified musical aspect</strong> for each
+              question. Ignore other differences.
             </li>
-            <li>Use the editing instruction as context only.</li>
-            <li>Focus only on the specified musical aspect.</li>
-            <li>Ignore whether the intended edit itself is correct.</li>
-            <li>Choose the version with fewer unintended changes.</li>
             <li>
-              Do not judge by personal preference, audio quality, loudness, or which version
-              sounds more interesting.
+              You may <strong>listen to each clip multiple times</strong> before making a
+              decision.
             </li>
-            <li>You may listen to each clip multiple times.</li>
+            <li>
+              Use <strong>headphones or a quiet environment</strong> if possible for better
+              listening quality.
+            </li>
+            <li>Some differences may be subtle — please rely on your best judgment.</li>
           </ul>
+
           <button type="button" onClick={handleBeginQuestions}>
             Begin questions
           </button>
@@ -709,10 +630,6 @@ export default function App() {
             <p className="eyebrow">
               Question {trial.questionNumber} of {trial.questionsInSection}
             </p>
-            <p className="instruction-row">
-              <span>Editing instruction: </span>
-              <strong>{trial.instruction.text}</strong>
-            </p>
             <p className="prompt-text">{trial.section.prompt}</p>
           </section>
 
@@ -726,38 +643,52 @@ export default function App() {
                   key={`orig-${trial.id}`}
                   controls
                   preload="metadata"
-                  src={trial.original.src}
+                  src={trial.audio.original}
                 />
               </div>
 
               <div className="candidate-grid">
-                {trial.candidates.map((candidate) => (
-                  <div key={candidate.blindSide} className="sample-option">
-                    <span className="sample-name">
-                      Edited version {candidate.blindSide}
-                    </span>
-                    <audio
-                      key={`${trial.id}-${candidate.blindSide}`}
-                      controls
-                      preload="metadata"
-                      src={candidate.src}
+                <div className="sample-option">
+                  <span className="sample-name">Edited version A</span>
+                  <audio
+                    key={`${trial.id}-A`}
+                    controls
+                    preload="metadata"
+                    src={trial.audio.clipA}
+                  />
+                  <label className="choice-row" htmlFor="answer-A">
+                    <input
+                      type="radio"
+                      name="choice"
+                      value="A"
+                      id="answer-A"
+                      checked={choice === "A"}
+                      onChange={() => handleChoiceChange("A")}
                     />
-                    <label
-                      className="choice-row"
-                      htmlFor={`answer-${candidate.blindSide}`}
-                    >
-                      <input
-                        type="radio"
-                        name="choice"
-                        value={candidate.blindSide}
-                        id={`answer-${candidate.blindSide}`}
-                        checked={choice === candidate.blindSide}
-                        onChange={() => handleChoiceChange(candidate.blindSide)}
-                      />
-                      <span>{candidate.blindSide} is better</span>
-                    </label>
-                  </div>
-                ))}
+                    <span>A is farther from the original</span>
+                  </label>
+                </div>
+
+                <div className="sample-option">
+                  <span className="sample-name">Edited version B</span>
+                  <audio
+                    key={`${trial.id}-B`}
+                    controls
+                    preload="metadata"
+                    src={trial.audio.clipB}
+                  />
+                  <label className="choice-row" htmlFor="answer-B">
+                    <input
+                      type="radio"
+                      name="choice"
+                      value="B"
+                      id="answer-B"
+                      checked={choice === "B"}
+                      onChange={() => handleChoiceChange("B")}
+                    />
+                    <span>B is farther from the original</span>
+                  </label>
+                </div>
               </div>
 
               <label className="same-option" htmlFor="answer-same">
@@ -769,7 +700,7 @@ export default function App() {
                   checked={choice === "same"}
                   onChange={() => handleChoiceChange("same")}
                 />
-                <span>About the same</span>
+                <span>The difference is negligible</span>
               </label>
             </fieldset>
 
@@ -827,6 +758,46 @@ export default function App() {
                   ))}
                 </ul>
               </div>
+            </div>
+            <div className="section-example">
+              <h3>Example</h3>
+              <p>Listen to the example below. The correct answer is revealed afterward.</p>
+              <table className="example-table">
+                <thead>
+                  <tr>
+                    <th>Clip</th>
+                    <th>Edit</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {trial.section.example.clips.map((row) => (
+                    <tr key={row.clip}>
+                      <td>{row.clip}</td>
+                      <td>{row.edit}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              <div className="example-audio-stack">
+                <div className="example-audio-row">
+                  <span className="example-audio-label">Original</span>
+                  <audio controls preload="metadata" src={trial.section.example.audio.original} />
+                </div>
+                <div className="example-audio-row">
+                  <span className="example-audio-label">Clip A</span>
+                  <audio controls preload="metadata" src={trial.section.example.audio.clipA} />
+                </div>
+                <div className="example-audio-row">
+                  <span className="example-audio-label">Clip B</span>
+                  <audio controls preload="metadata" src={trial.section.example.audio.clipB} />
+                </div>
+              </div>
+
+              <p className="example-answer">
+                <strong>Correct answer:</strong> {trial.section.example.correctAnswer}
+              </p>
+              <p className="example-explanation">{trial.section.example.explanation}</p>
             </div>
             <button type="button" onClick={handleStartSection}>
               Start section
