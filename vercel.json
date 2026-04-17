@@ -2,6 +2,10 @@
   "outputDirectory": "frontend/dist",
   "rewrites": [
     {
+      "source": "/music/:path*",
+      "destination": "https://questionaire.viewdns.net/music/:path*"
+    },
+    {
       "source": "/responses",
       "destination": "/api/responses"
     }

@@ -1,4 +1,4 @@
-const MUSIC_BASE = "https://questionaire.viewdns.net/music";
+const MUSIC_BASE = (import.meta.env.VITE_MUSIC_BASE || "/music").replace(/\/+$/, "");
 
 export const SECTIONS = [
   {
