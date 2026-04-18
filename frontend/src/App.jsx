@@ -767,11 +767,12 @@ export default function App() {
               <p>{trial.section.definition}</p>
               <div className="section-modal-grid">
                 <div>
-                  <h3>Focus on</h3>
+                  <h3>Only Focus on</h3>
                   <ul>
                     {trial.section.focus.map((item) => (
                       <li key={item}>{item}</li>
                     ))}
+                    <li>Ignore all other music facets except {trial.section.label}</li>
                   </ul>
                 </div>
               </div>
@@ -868,7 +869,7 @@ export default function App() {
         </section>
       )}
       {/* ── Instructions modal ── */}
-      {showInstructionsModal && (
+      {showInstructionsModal && trial && (
         <div
           className="section-modal"
           role="dialog"
@@ -898,19 +899,46 @@ export default function App() {
               <p><strong>Decide which edited clip is farther from the original with respect to that aspect.</strong></p>
             </div>
             <div className="section-modal-right">
-              <h3>How to Answer</h3>
-              <ul className="instruction-list">
-                <li>Edited Clip A is farther from the original</li>
-                <li>Edited Clip B is farther from the original</li>
-                <li>The difference is negligible</li>
-              </ul>
-              <h3>Important Notes</h3>
-              <ul className="instruction-list">
-                <li>Focus <strong>only on the specified musical aspect</strong>. Ignore other differences.</li>
-                <li>You may <strong>listen multiple times</strong> before deciding.</li>
-                <li>Use <strong>headphones or a quiet environment</strong> if possible.</li>
-                <li>Some differences may be subtle — rely on your best judgment.</li>
-              </ul>
+              <div className="section-example">
+                <h3>Example ({trial.section.label})</h3>
+                <p>Listen to the example below. The correct answer is revealed afterward.</p>
+                <table className="example-table">
+                  <thead>
+                    <tr>
+                      <th>Clip</th>
+                      <th>Edit</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {trial.section.example.clips.map((row) => (
+                      <tr key={row.clip}>
+                        <td>{row.clip}</td>
+                        <td>{row.edit}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                <div className="example-audio-stack">
+                  <div className="example-audio-row">
+                    <span className="example-audio-label">Original</span>
+                    <audio controls preload="metadata" src={trial.section.example.audio.original} />
+                  </div>
+                  <div className="example-audio-row">
+                    <span className="example-audio-label">Clip A</span>
+                    <audio controls preload="metadata" src={trial.section.example.audio.clipA} />
+                  </div>
+                  <div className="example-audio-row">
+                    <span className="example-audio-label">Clip B</span>
+                    <audio controls preload="metadata" src={trial.section.example.audio.clipB} />
+                  </div>
+                </div>
+
+                <p className="example-answer">
+                  <strong>Correct answer:</strong> {trial.section.example.correctAnswer}
+                </p>
+                <p className="example-explanation">{trial.section.example.explanation}</p>
+              </div>
               <button type="button" onClick={() => setShowInstructionsModal(false)}>
                 Close
               </button>
