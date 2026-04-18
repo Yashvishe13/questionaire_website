@@ -400,6 +400,20 @@ button:disabled {
   gap: 20px;
 }
 
+.trial-header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.instructions-btn {
+  min-height: 36px;
+  padding: 0 14px;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
 .trial-header h2 {
   margin: 0;
   font-family: var(--font-display);

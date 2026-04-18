@@ -138,9 +138,10 @@ function getRestoredChoice(sess) {
   return existing.displayChoice || "";
 }
 
-function applyResponse(sess, choiceVal) {
+function applyResponse(sess, choiceVal, shownAt) {
   if (!choiceVal) return null;
   const trial = sess.trials[sess.currentIndex];
+  const timeSpentMs = shownAt != null ? Date.now() - shownAt : null;
   return {
     ...sess,
     responses: {
@@ -153,6 +154,7 @@ function applyResponse(sess, choiceVal) {
         questionId: trial.questionDef.id,
         displayChoice: choiceVal,
         audio: trial.audio,
+        timeSpentMs,
         answeredAt: new Date().toISOString(),
       },
     },
@@ -168,6 +170,7 @@ export default function App() {
   const [validationMsg, setValidationMsg] = useState("");
   const [startValidation, setStartValidation] = useState("");
   const [showSectionModal, setShowSectionModal] = useState(false);
+  const [showInstructionsModal, setShowInstructionsModal] = useState(false);
   const [contactInfo, setContactInfo] = useState("");
   const [contactSaved, setContactSaved] = useState(false);
   const [contactFeedbackVisible, setContactFeedbackVisible] = useState(false);
@@ -177,6 +180,11 @@ export default function App() {
 
   const syncTimer = useRef(null);
   const pendingId = useRef(getPendingParticipantId());
+  const questionShownAt = useRef(null);
+
+  function markQuestionShown() {
+    questionShownAt.current = Date.now();
+  }
 
   useEffect(() => {
     const saved = loadSession();
@@ -240,7 +248,9 @@ export default function App() {
   function openSectionModalIfNew(sess) {
     const trial = sess.trials[sess.currentIndex];
     const seen = sess.seenSectionIds || [];
-    setShowSectionModal(!seen.includes(trial.section.id));
+    const isNew = !seen.includes(trial.section.id);
+    setShowSectionModal(isNew);
+    if (!isNew) markQuestionShown();
   }
 
   // ── Handlers ──────────────────────────────────────────────────────────────
@@ -291,12 +301,13 @@ export default function App() {
     persistSession(updated);
     setSession(updated);
     setShowSectionModal(false);
+    markQuestionShown();
   }
 
   function handleChoiceChange(val) {
     setChoice(val);
     setValidationMsg("");
-    const updated = applyResponse(session, val);
+    const updated = applyResponse(session, val, questionShownAt.current);
     if (updated) {
       persistSession(updated);
       setSession(updated);
@@ -310,7 +321,7 @@ export default function App() {
       setValidationMsg("Choose an answer before continuing.");
       return;
     }
-    let updated = applyResponse(session, choice);
+    let updated = applyResponse(session, choice, questionShownAt.current);
     if (!updated) return;
     const total = updated.trials.length;
 
@@ -351,7 +362,7 @@ export default function App() {
     if (!session || session.currentIndex === 0) return;
     let updated = session;
     if (choice) {
-      updated = applyResponse(session, choice) || session;
+      updated = applyResponse(session, choice, questionShownAt.current) || session;
       queueSync(updated, true);
     }
     updated = { ...updated, currentIndex: updated.currentIndex - 1 };
@@ -620,8 +631,17 @@ export default function App() {
               </p>
               <h2>{trial.section.label}</h2>
             </div>
-            <div className="progress-copy">
-              Question {session.currentIndex + 1} of {total}
+            <div className="trial-header-right">
+              <div className="progress-copy">
+                Question {session.currentIndex + 1} of {total}
+              </div>
+              <button
+                type="button"
+                className="secondary-button instructions-btn"
+                onClick={() => setShowInstructionsModal(true)}
+              >
+                Read instructions
+              </button>
             </div>
           </header>
 
@@ -816,9 +836,11 @@ export default function App() {
             <form className="contact-form" onSubmit={handleContactSubmit}>
               <label htmlFor="contact-info">Email address or Alipay account</label>
               <p>
-                This is entirely voluntary. As a token of appreciation, we will provide a
-                $10 Amazon gift card to participants who choose to share their contact
-                information.
+                Feel free to leave an anonymous email address or Alipay account (e.g., an
+                email address without your real name) if you would like to receive a reward.
+                Participants whose responses pass our sanity check will receive either a $10
+                Amazon gift card or an equivalent Alipay transfer (CNY). Rewards will be
+                distributed between April 28 and May 1.
               </p>
               <input
                 id="contact-info"
@@ -844,6 +866,57 @@ export default function App() {
             </p>
           )}
         </section>
+      )}
+      {/* ── Instructions modal ── */}
+      {showInstructionsModal && (
+        <div
+          className="section-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="instr-modal-title"
+          tabIndex={0}
+        >
+          <div className="section-modal-panel">
+            <div className="section-modal-left">
+              <p className="eyebrow">Instructions</p>
+              <h2 id="instr-modal-title">Listening Test Instructions</h2>
+              <h3>What You Will Hear</h3>
+              <p>In each question, you will hear <strong>three music clips</strong>:</p>
+              <ul className="instruction-list">
+                <li><strong>One original clip</strong></li>
+                <li><strong>Two edited versions</strong> derived from the same original</li>
+              </ul>
+              <p>All clips may be replayed as many times as you like.</p>
+              <h3>Your Task</h3>
+              <p>Focus on <strong>one specific musical aspect</strong> per section:</p>
+              <ul className="instruction-list">
+                <li>Harmony</li>
+                <li>Rhythm &amp; Meter</li>
+                <li>Structural Form</li>
+                <li>Melodic Content &amp; Motifs</li>
+              </ul>
+              <p><strong>Decide which edited clip is farther from the original with respect to that aspect.</strong></p>
+            </div>
+            <div className="section-modal-right">
+              <h3>How to Answer</h3>
+              <ul className="instruction-list">
+                <li>Edited Clip A is farther from the original</li>
+                <li>Edited Clip B is farther from the original</li>
+                <li>The difference is negligible</li>
+              </ul>
+              <h3>Important Notes</h3>
+              <ul className="instruction-list">
+                <li>Focus <strong>only on the specified musical aspect</strong>. Ignore other differences.</li>
+                <li>You may <strong>listen multiple times</strong> before deciding.</li>
+                <li>Use <strong>headphones or a quiet environment</strong> if possible.</li>
+                <li>Some differences may be subtle — rely on your best judgment.</li>
+              </ul>
+              <button type="button" onClick={() => setShowInstructionsModal(false)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </main>
   );

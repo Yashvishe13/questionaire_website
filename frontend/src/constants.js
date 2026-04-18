@@ -68,15 +68,6 @@ export const SECTIONS = [
           clipB: `${MUSIC_BASE}/edit_2_audio/harmony/q4_harmony_+4semitone_005_edit_2.wav`,
         },
       },
-      {
-        id: "q5",
-        sourceId: "006",
-        audio: {
-          original: `${MUSIC_BASE}/original_audio/006.wav`,
-          clipA: `${MUSIC_BASE}/edit_1_audio/harmony/q5_harmony_+5semitone_006_edit_1.wav`,
-          clipB: `${MUSIC_BASE}/edit_2_audio/harmony/q5_harmony_+6semitone_006_edit_2.wav`,
-        },
-      },
     ],
   },
   {
@@ -180,8 +171,8 @@ export const SECTIONS = [
         sourceId: "007",
         audio: {
           original: `${MUSIC_BASE}/original_audio/007.wav`,
-          clipA: `${MUSIC_BASE}/edit_1_audio/rhythm/q1_rhythm_tempo+10_007_edit_1.wav`,
-          clipB: `${MUSIC_BASE}/edit_2_audio/rhythm/q1_rhythm_tempo+40_007_edit_2.wav`,
+          clipA: `${MUSIC_BASE}/edit_1_audio/rhythm/q1_rhythm_tempo+40_007_edit_1.wav`,
+          clipB: `${MUSIC_BASE}/edit_2_audio/rhythm/q1_rhythm_identical_007_edit_2.wav`,
         },
       },
       {
