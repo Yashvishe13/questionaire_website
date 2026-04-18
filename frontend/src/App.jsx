@@ -871,7 +871,7 @@ export default function App() {
       {/* ── Instructions modal ── */}
       {showInstructionsModal && trial && (
         <div
-          className="section-modal"
+          className="section-modal instructions-modal"
           role="dialog"
           aria-modal="true"
           aria-labelledby="instr-modal-title"
@@ -881,24 +881,81 @@ export default function App() {
             <div className="section-modal-left">
               <p className="eyebrow">Instructions</p>
               <h2 id="instr-modal-title">Listening Test Instructions</h2>
+              <p>Thank you for participating in this listening study!</p>
+
               <h3>What You Will Hear</h3>
               <p>In each question, you will hear <strong>three music clips</strong>:</p>
               <ul className="instruction-list">
                 <li><strong>One original clip</strong></li>
-                <li><strong>Two edited versions</strong> derived from the same original</li>
+                <li><strong>Two edited versions</strong> derived from the same original clip</li>
               </ul>
-              <p>All clips may be replayed as many times as you like.</p>
+              <p>All clips are short excerpts and may be replayed as many times as you like.</p>
+
               <h3>Your Task</h3>
-              <p>Focus on <strong>one specific musical aspect</strong> per section:</p>
+              <p>
+                For each question, you will be asked to focus on <strong>one specific musical
+                aspect</strong>, such as:
+              </p>
               <ul className="instruction-list">
                 <li>Harmony</li>
                 <li>Rhythm &amp; Meter</li>
                 <li>Structural Form</li>
                 <li>Melodic Content &amp; Motifs</li>
               </ul>
-              <p><strong>Decide which edited clip is farther from the original with respect to that aspect.</strong></p>
+              <p>
+                <strong>
+                  Your task is to compare the two edited clips and decide which one is farther
+                  from the original one with respect to that aspect.
+                </strong>
+              </p>
+
+              <h3>How to Answer</h3>
+              <p>After listening, select one of the following options:</p>
+              <ul className="instruction-list">
+                <li>Edited Clip A is farther from the original</li>
+                <li>Edited Clip B is farther from the original</li>
+                <li>
+                  The difference is negligible (use this option only if you cannot make a
+                  decision after careful listening)
+                </li>
+              </ul>
+
+              <h3>Important Notes</h3>
+              <ul className="instruction-list">
+                <li>
+                  Please <strong>focus only on the specified musical aspect</strong> for each
+                  question. Ignore other differences.
+                </li>
+                <li>
+                  You may <strong>listen to each clip multiple times</strong> before making a
+                  decision.
+                </li>
+                <li>
+                  Use <strong>headphones or a quiet environment</strong> if possible for better
+                  listening quality.
+                </li>
+                <li>Some differences may be subtle — please rely on your best judgment.</li>
+              </ul>
             </div>
             <div className="section-modal-right">
+              <p className="eyebrow">
+                Section {trial.sectionIndex} of {SECTIONS.length}
+              </p>
+              <h2>{trial.section.label}</h2>
+              <h3>Definition</h3>
+              <p>{trial.section.definition}</p>
+              <div className="section-modal-grid">
+                <div>
+                  <h3>Only Focus on</h3>
+                  <ul>
+                    {trial.section.focus.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                    <li>Ignore all other music facets except {trial.section.label}</li>
+                  </ul>
+                </div>
+              </div>
+
               <div className="section-example">
                 <h3>Example ({trial.section.label})</h3>
                 <p>Listen to the example below. The correct answer is revealed afterward.</p>

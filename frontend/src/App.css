@@ -629,6 +629,11 @@ audio {
   box-shadow: var(--shadow);
 }
 
+.instructions-modal .section-modal-panel {
+  width: 100%;
+  max-width: 100%;
+}
+
 .section-modal-left {
   padding: 40px;
   border-right: 1px solid var(--line);
