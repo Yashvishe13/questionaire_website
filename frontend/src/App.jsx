@@ -431,7 +431,6 @@ export default function App() {
           <div className="study-copy">
             <p className="thank-you-note">Thank you for participating in this survey.</p>
             <h1>Compare two edited clips and decide which one is farther from the original.</h1>
-            <p>Your responses will help us compare music editing methods.</p>
             <p>
               You will complete 4 sections with 2 questions each. Each question includes an
               original clip and two edited versions. Focus on the specified musical aspect for

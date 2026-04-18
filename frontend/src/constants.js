@@ -80,73 +80,6 @@ export const SECTIONS = [
     ],
   },
   {
-    id: "rhythm",
-    label: "Rhythm & Meter",
-    definition:
-      "Rhythm & Meter refers to the temporal structure of a piece — how fast the music moves (tempo), where the beats fall in time, and how steadily the rhythmic pulse is maintained across the piece.",
-    focus: [
-      "The overall tempo or speed of the music (does the edited clip feel like it moves at the same pace as the original?)",
-      "The placement and regularity of beats (do the beats land at the expected moments, or do they feel shifted, rushed, or dragged?)",
-      "The steadiness of the rhythmic pulse (does the music maintain a stable groove, or does it feel uneven, jittery, or unstable?)",
-    ],
-    ignore: ["pitch or harmony", "timbre", "instrumentation"],
-    prompt:
-      "Which edited clip is farther from the original in terms of rhythm and meter?",
-    example: {
-      clips: [
-        { clip: "Original", edit: "no edit" },
-        { clip: "A", edit: "no edit (identical to original)" },
-        { clip: "B", edit: "tempo shifted +50%" },
-      ],
-      audio: {
-        original: `${MUSIC_BASE}/original_audio/006.wav`,
-        clipA: `${MUSIC_BASE}/example/edit_1_audio/rhythm/example_rhythm_identical_006_edit_1.wav`,
-        clipB: `${MUSIC_BASE}/example/edit_2_audio/rhythm/example_rhythm_tempo+50_006_edit_2.wav`,
-      },
-      correctAnswer: "B is farther from the original.",
-      explanation:
-        'Clip A is identical to the original. Clip B has been sped up by 50%, making the music feel noticeably faster and changing where every beat lands. Therefore B is farther from the original in terms of rhythm & meter.',
-    },
-    questions: [
-      {
-        id: "q1",
-        sourceId: "007",
-        audio: {
-          original: `${MUSIC_BASE}/original_audio/007.wav`,
-          clipA: `${MUSIC_BASE}/edit_1_audio/rhythm/q1_rhythm_tempo+10_007_edit_1.wav`,
-          clipB: `${MUSIC_BASE}/edit_2_audio/rhythm/q1_rhythm_tempo+40_007_edit_2.wav`,
-        },
-      },
-      {
-        id: "q2",
-        sourceId: "008",
-        audio: {
-          original: `${MUSIC_BASE}/original_audio/008.wav`,
-          clipA: `${MUSIC_BASE}/edit_1_audio/rhythm/q2_rhythm_tempo+5_008_edit_1.wav`,
-          clipB: `${MUSIC_BASE}/edit_2_audio/rhythm/q2_rhythm_tempo+30_008_edit_2.wav`,
-        },
-      },
-      {
-        id: "q3",
-        sourceId: "009",
-        audio: {
-          original: `${MUSIC_BASE}/original_audio/009.wav`,
-          clipA: `${MUSIC_BASE}/edit_1_audio/rhythm/q3_rhythm_offset+150ms_009_edit_1.wav`,
-          clipB: `${MUSIC_BASE}/edit_2_audio/rhythm/q3_rhythm_jitter80ms_009_edit_2.wav`,
-        },
-      },
-      {
-        id: "q4",
-        sourceId: "010",
-        audio: {
-          original: `${MUSIC_BASE}/original_audio/010.wav`,
-          clipA: `${MUSIC_BASE}/edit_1_audio/rhythm/q4_rhythm_decel15_010_edit_1.wav`,
-          clipB: `${MUSIC_BASE}/edit_2_audio/rhythm/q4_rhythm_offset+50ms_010_edit_2.wav`,
-        },
-      },
-    ],
-  },
-  {
     id: "structural",
     label: "Structural Form",
     definition:
@@ -209,6 +142,73 @@ export const SECTIONS = [
           original: `${MUSIC_BASE}/original_audio/015.wav`,
           clipA: `${MUSIC_BASE}/edit_1_audio/structural/q4_structural_ACB_015_edit_1.wav`,
           clipB: `${MUSIC_BASE}/edit_2_audio/structural/q4_structural_AAB_015_edit_2.wav`,
+        },
+      },
+    ],
+  },
+  {
+    id: "rhythm",
+    label: "Rhythm & Meter",
+    definition:
+      "Rhythm & Meter refers to the temporal structure of a piece — how fast the music moves (tempo), where the beats fall in time, and how steadily the rhythmic pulse is maintained across the piece.",
+    focus: [
+      "The overall tempo or speed of the music (does the edited clip feel like it moves at the same pace as the original?)",
+      "The placement and regularity of beats (do the beats land at the expected moments, or do they feel shifted, rushed, or dragged?)",
+      "The steadiness of the rhythmic pulse (does the music maintain a stable groove, or does it feel uneven, jittery, or unstable?)",
+    ],
+    ignore: ["pitch or harmony", "timbre", "instrumentation"],
+    prompt:
+      "Which edited clip is farther from the original in terms of rhythm and meter?",
+    example: {
+      clips: [
+        { clip: "Original", edit: "no edit" },
+        { clip: "A", edit: "no edit (identical to original)" },
+        { clip: "B", edit: "tempo shifted +50%" },
+      ],
+      audio: {
+        original: `${MUSIC_BASE}/original_audio/006.wav`,
+        clipA: `${MUSIC_BASE}/example/edit_1_audio/rhythm/example_rhythm_identical_006_edit_1.wav`,
+        clipB: `${MUSIC_BASE}/example/edit_2_audio/rhythm/example_rhythm_tempo+50_006_edit_2.wav`,
+      },
+      correctAnswer: "B is farther from the original.",
+      explanation:
+        'Clip A is identical to the original. Clip B has been sped up by 50%, making the music feel noticeably faster and changing where every beat lands. Therefore B is farther from the original in terms of rhythm & meter.',
+    },
+    questions: [
+      {
+        id: "q1",
+        sourceId: "007",
+        audio: {
+          original: `${MUSIC_BASE}/original_audio/007.wav`,
+          clipA: `${MUSIC_BASE}/edit_1_audio/rhythm/q1_rhythm_tempo+10_007_edit_1.wav`,
+          clipB: `${MUSIC_BASE}/edit_2_audio/rhythm/q1_rhythm_tempo+40_007_edit_2.wav`,
+        },
+      },
+      {
+        id: "q2",
+        sourceId: "008",
+        audio: {
+          original: `${MUSIC_BASE}/original_audio/008.wav`,
+          clipA: `${MUSIC_BASE}/edit_1_audio/rhythm/q2_rhythm_tempo+5_008_edit_1.wav`,
+          clipB: `${MUSIC_BASE}/edit_2_audio/rhythm/q2_rhythm_tempo+30_008_edit_2.wav`,
+        },
+      },
+      {
+        id: "q3",
+        sourceId: "009",
+        audio: {
+          original: `${MUSIC_BASE}/original_audio/009.wav`,
+          clipA: `${MUSIC_BASE}/edit_1_audio/rhythm/q3_rhythm_offset+150ms_009_edit_1.wav`,
+          clipB: `${MUSIC_BASE}/edit_2_audio/rhythm/q3_rhythm_jitter80ms_009_edit_2.wav`,
+        },
+      },
+      {
+        id: "q4",
+        sourceId: "010",
+        audio: {
+          original: `${MUSIC_BASE}/original_audio/010.wav`,
+          clipA: `${MUSIC_BASE}/edit_1_audio/rhythm/q4_rhythm_decel15_010_edit_1.wav`,
+          clipB: `${MUSIC_BASE}/edit_2_audio/rhythm/q4_rhythm_offset+50ms_010_edit_2.wav`,
         },
       },
     ],
