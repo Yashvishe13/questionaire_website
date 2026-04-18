@@ -177,20 +177,20 @@ export const SECTIONS = [
       },
       {
         id: "q2",
-        sourceId: "008",
-        audio: {
-          original: `${MUSIC_BASE}/original_audio/008.wav`,
-          clipA: `${MUSIC_BASE}/edit_1_audio/rhythm/q2_rhythm_tempo+5_008_edit_1.wav`,
-          clipB: `${MUSIC_BASE}/edit_2_audio/rhythm/q2_rhythm_tempo+30_008_edit_2.wav`,
-        },
-      },
-      {
-        id: "q3",
         sourceId: "009",
         audio: {
           original: `${MUSIC_BASE}/original_audio/009.wav`,
           clipA: `${MUSIC_BASE}/edit_1_audio/rhythm/q3_rhythm_offset+150ms_009_edit_1.wav`,
           clipB: `${MUSIC_BASE}/edit_2_audio/rhythm/q3_rhythm_jitter80ms_009_edit_2.wav`,
+        },
+      },
+      {
+        id: "q3",
+        sourceId: "008",
+        audio: {
+          original: `${MUSIC_BASE}/original_audio/008.wav`,
+          clipA: `${MUSIC_BASE}/edit_2_audio/rhythm/q2_rhythm_tempo+30_008_edit_2.wav`,
+          clipB: `${MUSIC_BASE}/original_audio/008.wav`,
         },
       },
       {
